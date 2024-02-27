@@ -1,0 +1,110 @@
+mql5
+//+------------------------------------------------------------------+
+//|                                                         Index Flip |
+//|                                      Developer's Site: forexroboteasy.com |
+//|                                               Developed by: Forex Robot Easy Team |
+//+------------------------------------------------------------------+
+
+//--- Include necessary libraries
+#include <Trade\Trade.mqh>
+#include <Indicators\BollingerBands.mqh>
+
+//--- Define input parameters
+input int   MagicNumber = 12345;         // Magic number for identifying trades
+input int   GridStepSize = 20;           // Grid step size in pips
+input int   StopLoss = 50;               // Stop loss in pips
+input int   TakeProfit = 100;            // Take profit in pips
+input int   MaxPositions = 5;            // Maximum number of positions to open
+input double LotSize = 0.01;             // Initial lot size for each position
+
+//--- Define global variables
+int g_totalPositions = 0;                // Total number of open positions
+
+//--- Create an instance of the trade class
+CTrade trade;
+
+//+------------------------------------------------------------------+
+//| Expert initialization function                                   |
+//+------------------------------------------------------------------+
+int OnInit()
+{
+   return(INIT_SUCCEEDED);
+}
+
+//+------------------------------------------------------------------+
+//| Expert deinitialization function                                 |
+//+------------------------------------------------------------------+
+void OnDeinit(const int reason)
+{
+
+}
+
+//+------------------------------------------------------------------+
+//| Expert tick function                                             |
+//+------------------------------------------------------------------+
+void OnTick()
+{
+   //--- Check if the maximum number of positions has been reached
+   if(g_totalPositions >= MaxPositions)
+      return;
+
+   //--- Calculate the current Bollinger Bands values
+   double upperBand = iBands(_Symbol, PERIOD_CURRENT, 20, 2, 0, PRICE_CLOSE, MODE_UPPER, 0);
+   double lowerBand = iBands(_Symbol, PERIOD_CURRENT, 20, 2, 0, PRICE_CLOSE, MODE_LOWER, 0);
+
+   //--- Check if the price has crossed the upper band
+   if(CheckPricePattern() && Bid > upperBand)
+   {
+      //--- Open a new buy position
+      trade.Buy(LotSize, NULL, NULL, NULL, NULL, NULL, MagicNumber);
+
+      //--- Increase the total number of positions
+      g_totalPositions++;
+   }
+   //--- Check if the price has crossed the lower band
+   else if(CheckPricePattern() && Bid < lowerBand)
+   {
+      //--- Open a new sell position
+      trade.Sell(LotSize, NULL, NULL, NULL, NULL, NULL, MagicNumber);
+
+      //--- Increase the total number of positions
+      g_totalPositions++;
+   }
+}
+
+//+------------------------------------------------------------------+
+//| Function to check for a specific price pattern                    |
+//+------------------------------------------------------------------+
+bool CheckPricePattern()
+{
+   //--- Implement your specific price pattern algorithm here
+   //--- Return true if the pattern is detected, otherwise false
+   return true;
+}
+
+//+------------------------------------------------------------------+
+//| Expert start function                                             |
+//+------------------------------------------------------------------+
+void OnStart()
+{
+   //--- Set the initial lot size
+   trade.SetExpertMagicNumber(MagicNumber);
+   trade.SetDeviationInPoints(10);
+   trade.SetExpertStopLoss(StopLoss);
+   trade.SetExpertTakeProfit(TakeProfit);
+
+   //--- Set the maximum number of positions
+   trade.SetMaxExpertPositions(MaxPositions);
+
+   //--- Enable the expert advisor
+   trade.SetExpertEnable(true);
+}
+
+//+------------------------------------------------------------------+
+//| Expert stop function                                             |
+//+------------------------------------------------------------------+
+void OnStop()
+{
+   //--- Close all open positions
+   trade.CloseAll();
+}
